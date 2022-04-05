@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-import 'package:flutter/services.dart';
 import 'package:zebra_scanner/zebra_scanner.dart';
 
 void main() {
@@ -26,21 +25,10 @@ class _MyAppState extends State<MyApp> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-    try {
-      hello = await ZebraScanner.platformVersion;
-    } on PlatformException {
-      //
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
     ZebraScanner.init();
     ZebraScanner.onBardcodeScanned.listen((element) {
       setState(() {
-        data = element;
+        data = element.code;
       });
     });
   }
