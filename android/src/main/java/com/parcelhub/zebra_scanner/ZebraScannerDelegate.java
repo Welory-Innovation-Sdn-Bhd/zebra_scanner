@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.flutter.plugin.common.PluginRegistry;
 
@@ -24,6 +26,7 @@ public class ZebraScannerDelegate implements PluginRegistry.ActivityResultListen
         c = this.activity.getApplicationContext();
 
         this.createProfile();
+        this.subscribeReceiver();
     }
 
     @Override
@@ -43,45 +46,17 @@ public class ZebraScannerDelegate implements PluginRegistry.ActivityResultListen
         bMain.putString("CONFIG_MODE","CREATE_IF_NOT_EXIST");
         bMain.putString("RESET_CONFIG", "true");
 
-        Bundle paramList = new Bundle();
-//        paramList.putString("workflow_name","license_plate");
-//        paramList.putString("workflow_input_source","2");
-//
-//        Bundle paramSetContainerDecoderModule = new Bundle();
-//        paramSetContainerDecoderModule.putString("module","LicenseDecoderModule");
-//        Bundle moduleContainerDecoderModule = new Bundle();
-//        moduleContainerDecoderModule.putString("session_timeout", "15000");
-//        moduleContainerDecoderModule.putString("output_image", "full");
-//        moduleContainerDecoderModule.putString("scanMode", "unitedstates"); //unitedstates, auto
-//        paramSetContainerDecoderModule.putBundle("module_params",moduleContainerDecoderModule);
-
-//        Bundle paramSetCameraModule = new Bundle();
-//        paramSetCameraModule.putString("module","CameraModule");
-//        Bundle moduleCameraModule = new Bundle();
-//        moduleCameraModule.putString("illumination", "on");
-//        paramSetCameraModule.putBundle("module_params",moduleCameraModule);
-
-//        Bundle paramSetFeedbackModule = new Bundle();
-//        paramSetFeedbackModule.putString("module","FeedbackModule");
-//        Bundle moduleParamsFeedback = new Bundle();
-//        moduleParamsFeedback.putString("decode_haptic_feedback", "true");
-//        moduleParamsFeedback.putString("decode_audio_feedback_uri", "none");
-//        moduleParamsFeedback.putString("volume_slider_type", "2");// 0- Ringer, 1- Music and Media, 2-Alarms, 3- Notification
-//        moduleParamsFeedback.putString("decoding_led_feedback", "false");
-//        paramSetFeedbackModule.putBundle("module_params",moduleParamsFeedback);
-
-//        ArrayList<Bundle> paramSetList = new ArrayList<>();
-//        paramSetList.add(paramSetContainerDecoderModule);
-//        paramSetList.add(paramSetFeedbackModule);
-//        paramSetList.add(paramSetCameraModule);
-
-//        paramList.putParcelableArrayList("workflow_params", paramSetList);
-
-//        ArrayList<Bundle> workFlowList = new ArrayList<>();
-//        workFlowList.add(paramList);
-//
-//        bConfigWorkflow.putParcelableArrayList("PARAM_LIST", workFlowList);
-//        bundlePluginConfig.add(bConfigWorkflow);
+        /*###### Configurations for BARCODE [Start] ######*/
+        Bundle bConfigBarcode = new Bundle();
+        Bundle bParamsBarcode = new Bundle();
+        bConfigBarcode.putString("PLUGIN_NAME","BARCODE");
+        bConfigBarcode.putString("RESET_CONFIG", "true");
+        bParamsBarcode.putString("scanner_selection","auto");
+        bParamsBarcode.putInt("volume_slider_type",1 );
+        bParamsBarcode.putString("decode_audio_feedback_uri", "Silent");
+        bConfigBarcode.putBundle("PARAM_LIST", bParamsBarcode);
+        bundlePluginConfig.add(bConfigBarcode);
+        /*###### Configurations for BARCODE [Finish] ######*/
 
          /*###### Configurations for Intent Output [Start] ######*/
         Bundle bConfigIntent = new Bundle();
@@ -113,8 +88,12 @@ public class ZebraScannerDelegate implements PluginRegistry.ActivityResultListen
         Intent i = new Intent();
         i.setAction("com.symbol.datawedge.api.ACTION");
         i.putExtra("com.symbol.datawedge.api.SET_CONFIG", bMain);
-         c.sendBroadcast(i);
+        c.sendBroadcast(i);
 
+    }
+
+    public void subscribeReceiver()
+    {
         IntentFilter filter = new IntentFilter();
         filter.addCategory(Intent.CATEGORY_DEFAULT);
         filter.addAction(intentAction);
@@ -139,11 +118,25 @@ public class ZebraScannerDelegate implements PluginRegistry.ActivityResultListen
             if (action.equals(intentAction)) {
                 //  Received a barcode scan
                 try {
+                    String decodedSource = intent.getStringExtra("com.symbol.datawedge.source");
                     String decodedData = intent.getStringExtra("com.symbol.datawedge.data_string");
-                      Log.d("zebra_scanner", "data: " + decodedData);
-                    ZebraScannerPlugin.getInstance().onReceived(decodedData);
+                    String decodedLabelType = intent.getStringExtra("com.symbol.datawedge.label_type");
+
+                    Log.d("zebra_scanner", "source: " + decodedSource);
+                    Log.d("zebra_scanner", "data: " + decodedData);
+                    Log.d("zebra_scanner", "type: " + decodedLabelType);
+
+                    HashMap<String, String> result = new HashMap<String, String>();
+
+                    result.put("source", decodedSource);
+                    result.put("data", decodedData);
+                    result.put("type", decodedLabelType);
+
+
+                    ZebraScannerPlugin.getInstance().onReceived(result);
                 } catch (Exception e) {
                     //  Catch if the UI does not exist when we receive the broadcast
+                    Log.d("zebra_scanner", e.toString());
                 }
             }
         }

@@ -37,7 +37,8 @@ class _MyAppState extends State<MyApp> {
     // setState to update our non-existent appearance.
     if (!mounted) return;
 
-    ZebraScanner().onBardcodeScanned.listen((element) {
+    ZebraScanner.init();
+    ZebraScanner.onBardcodeScanned.listen((element) {
       setState(() {
         data = element;
       });

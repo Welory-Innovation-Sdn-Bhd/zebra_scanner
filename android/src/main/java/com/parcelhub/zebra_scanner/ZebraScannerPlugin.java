@@ -3,6 +3,10 @@ package com.parcelhub.zebra_scanner;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+
+import java.util.HashMap;
 
 import androidx.annotation.NonNull;
 
@@ -22,9 +26,8 @@ public class ZebraScannerPlugin implements FlutterPlugin, MethodCallHandler, Act
   /// when the Flutter Engine is detached from the Activity
   private MethodChannel channel;
 
-
-private ActivityPluginBinding activityPluginBinding;
-private ZebraScannerDelegate delegate;
+  private ActivityPluginBinding activityPluginBinding;
+  private ZebraScannerDelegate delegate;
 
   private static ZebraScannerPlugin instance;
 
@@ -80,9 +83,21 @@ private ZebraScannerDelegate delegate;
     channel.setMethodCallHandler(null);
   }
 
-  public void onReceived(String data)
+  public void onReceived(HashMap<String, String> data)
   {
-    channel.invokeMethod("onRecognizeBarcode", data);
+
+    Thread t = new Thread(new Runnable() {
+      public void run() {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+          @Override
+          public void run() {
+            channel.invokeMethod("onCodeDetected", data);
+          }
+        });
+      }
+    });
+    t.start();
+
   }
 
 }
